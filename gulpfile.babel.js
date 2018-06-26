@@ -12,10 +12,8 @@ gulp.task('watch', () => {
 
 gulp.task('compile', () => {
     return gulp.src('src/**/*.js')
+        .pipe(babel())
         .pipe(concat('drag-en-select.js'))
-        .pipe(babel({
-            presets: ['env']
-        }))
         .pipe(gulp.dest('dist'))
         .pipe(uglify())
         .pipe(rename({extname: '.min.js'}))
