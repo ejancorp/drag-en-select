@@ -1,0 +1,23 @@
+version: '3.1'
+
+services:
+
+  node: &node_base
+    image: node:9.11.2-alpine
+    restart: 'no'
+
+  npm-install:
+    <<: *node_base
+    entrypoint: npm
+    command: install
+    working_dir: '/app'
+    volumes:
+      - '.:/app'
+
+  gulp:
+    <<: *node_base
+    entrypoint: npx
+    command: gulp
+    working_dir: '/app'
+    volumes:
+      - '.:/app'
