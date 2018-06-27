@@ -27,8 +27,124 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }
 
         _createClass(DragEnSelect, [{
+            key: 'bind_events',
+            value: function bind_events() {
+                document.addEventListener('selectstart', this.on_select_start.bind(this));
+                document.addEventListener('mouseup', this.on_mouse_up.bind(this));
+                document.addEventListener('mousedown', this.on_mouse_down.bind(this));
+                document.addEventListener('mousemove', this.on_mouse_move.bind(this));
+            }
+
+            /**
+             * Handle selectstart event
+             * @param event
+             */
+
+        }, {
+            key: 'on_select_start',
+            value: function on_select_start(event) {
+                event.preventDefault();
+            }
+
+            /**
+             * Handle mouseup event
+             * @param event
+             */
+
+        }, {
+            key: 'on_mouse_up',
+            value: function on_mouse_up(event) {
+                document.removeEventListener('mousemove');
+                document.removeEventListener('mouseup');
+            }
+
+            /**
+             * Handle mousedown event
+             * @param event
+             */
+
+        }, {
+            key: 'on_mouse_down',
+            value: function on_mouse_down(event) {}
+
+            /**
+             * Handle mousemove event
+             * @param event
+             */
+
+        }, {
+            key: 'on_mouse_move',
+            value: function on_mouse_move(event) {}
+        }, {
             key: 'attach',
             value: function attach() {
+                var dragbox = document.createElement('div');
+                var isDragCancelled = false;
+                var startX, startY;
+                var selectItems;
+
+                document.body.appendChild(dragbox);
+
+                document.addEventListener('selectstart', function (e) {
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousedown', function (e) {
+                    isDragCancelled = false;
+                    startX = e.pageX;
+                    startY = e.pageY;
+
+                    selectItems = document.querySelectorAll('.selectable');
+
+                    selectItems = Array.prototype.map.call(selectItems, function (element) {
+                        return {
+                            element: element,
+                            isSelected: element.classList.contains('is-selected')
+                        };
+                    });
+
+                    document.addEventListener('mouseup', handleMouseUp);
+                    setTimeout(function () {
+                        if (isDragCancelled) {
+                            return;
+                        }
+
+                        document.addEventListener('mousemove', handleMouseMove);
+                    }, 100);
+                });
+
+                function handleMouseMove(e) {
+                    var x = e.pageX;
+                    var y = e.pageY;
+                    var top = Math.min(startY, y);
+                    var left = Math.min(startX, x);
+                    var width = Math.abs(startX - x);
+                    var height = Math.abs(startY - y);
+
+                    dragbox.setAttribute('style', 'position: absolute;' + 'border: 1px solid rgba(166, 193, 255, .8);' + 'background: rgba(166, 193, 255, .3);' + 'left:' + left + 'px;' + 'top:' + top + 'px;' + 'width:' + width + 'px;' + 'height:' + height + 'px;');
+
+                    selectItems.forEach(function (selectItem) {
+                        var el = selectItem.element;
+
+                        if (el.offsetLeft >= left && el.offsetTop >= top && el.offsetLeft + el.offsetWidth <= left + width && el.offsetTop + el.offsetHeight <= top + height) {
+                            selectItem.isSelected ? el.classList.remove('is-selected') : el.classList.add('is-selected');
+                        } else {
+                            selectItem.isSelected ? el.classList.add('is-selected') : el.classList.remove('is-selected');
+                        }
+                    });
+                }
+
+                function handleMouseUp() {
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    isDragCancelled = true;
+                    dragbox.style.display = 'none';
+                    selectItems = [];
+                }
+            }
+        }, {
+            key: 'test',
+            value: function test() {
 
                 var con = document.getElementById('element-container');
                 var box = document.getElementById('el-box');
@@ -54,18 +170,26 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 };
 
                 var x, y;
-                window.addEventListener('mousemove', function (e) {
+                con.addEventListener('mousemove', function (e) {
                     x = e.clientX;
                     y = e.clientY;
+                    box.style.position = 'absolute';
                     if (typeof x !== 'undefined') {
-                        box.style.left = x + "px";
-                        box.style.top = y + "px";
+                        box.style.left = x - 10 + "px";
+                        box.style.top = y - 10 + "px";
                     }
                 }, false);
 
                 box.addEventListener('dragstart', function (e) {
                     mouse.startX = mouse.x;
                     mouse.startY = mouse.y;
+                }, false);
+
+                box.addEventListener('dragend', function (e) {
+                    box.style.width = '10px';
+                    box.style.height = '10px';
+                    x = e.clientX;
+                    y = e.clientY;
                 }, false);
 
                 box.addEventListener('drag', function (e) {

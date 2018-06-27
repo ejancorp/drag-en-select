@@ -5,18 +5,43 @@
     <title>Test Drag And Select</title>
 
     <style>
-        .rectangle {
-            border: 1px solid #FF0000;
-            position: absolute;
+        .container {
+            height: 600px;
+            width: 800px;
+            border: 1px dashed #ABB2B9;
+            padding: 40px;
+            user-select: none;
+        }
+
+        .box {
+            height: 10px;
+            width: 10px;
+            border: 1px dashed #212F3C;
+            display: inline-block;
+            margin: 2px;
+        }
+
+        .selected {
+            background: #2C3E50;
         }
     </style>
 </head>
 <body>
 
-<div id="element-container" style="height: 500px; width: 800px; border: 1px solid #000;">
-    <div draggable="true" id="el-box" style="height: 2px; width: 2px; border: 1px solid #000;"></div>
+<div class="container" id="container">
 </div>
 
+<script type="text/javascript">
+
+    var boxCount = 1500;
+    var container = document.getElementById('container');
+    for (i = 0; i < boxCount; i++) {
+        var boxDiv = document.createElement('div');
+        boxDiv.className = 'box';
+        container.appendChild(boxDiv);
+    }
+
+</script>
 <script type="text/javascript" src="drag-en-select.js"></script>
 
 </body>
