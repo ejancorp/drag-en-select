@@ -4,8 +4,10 @@
   "main": "dist/drag-en-select.js",
   "author": "Ej Corpuz",
   "scripts": {
-    "compile": "npx gulp --gulpfile gulpfile.babel.js compile",
-    "watch": "npx gulp --gulpfile gulpfile.babel.js watch"
+    "gulp": "npx gulp --gulpfile gulpfile.babel.js",
+    "compile": "npm run gulp compile",
+    "watch": "npm run gulp watch",
+    "serve": "npm run gulp serve"
   },
   "devDependencies": {
     "babel": "^6.23.0",

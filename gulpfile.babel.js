@@ -3,12 +3,9 @@ import babel from 'gulp-babel';
 import concat from 'gulp-concat';
 import uglify from 'gulp-uglify';
 import rename from 'gulp-rename';
+import browserSync from 'browser-sync';
 
 gulp.task('default', ['compile']);
-
-gulp.task('watch', () => {
-    gulp.watch('src/**/*.js', ['compile']);
-});
 
 gulp.task('compile', () => {
     return gulp.src('src/**/*.js')
@@ -18,4 +15,12 @@ gulp.task('compile', () => {
         .pipe(uglify())
         .pipe(rename({extname: '.min.js'}))
         .pipe(gulp.dest('dist'))
+});
+
+gulp.task('serve', function () {
+    browserSync.init(['dist/**/*.js'], {
+        server: ["demo", "dist"]
+    });
+
+    gulp.watch('src/**/*.js', ['compile']);
 });
