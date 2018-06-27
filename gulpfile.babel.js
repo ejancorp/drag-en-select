@@ -3,12 +3,14 @@ import babel from 'gulp-babel';
 import concat from 'gulp-concat';
 import uglify from 'gulp-uglify';
 import rename from 'gulp-rename';
+import plumber from 'gulp-plumber';
 import browserSync from 'browser-sync';
 
 gulp.task('default', ['compile']);
 
 gulp.task('compile', () => {
     return gulp.src('src/**/*.js')
+        .pipe(plumber())
         .pipe(babel())
         .pipe(concat('drag-en-select.js'))
         .pipe(gulp.dest('dist'))

@@ -24,6 +24,13 @@
         .selected {
             background: #2C3E50;
         }
+
+        /*default styles*/
+        .select-box {
+            border: 1px solid rgba(166, 193, 255, .8);
+            background: rgba(166, 193, 255, .3);
+        }
+
     </style>
 </head>
 <body>
@@ -31,18 +38,21 @@
 <div class="container" id="container">
 </div>
 
+<script type="text/javascript" src="drag-en-select.min.js"></script>
 <script type="text/javascript">
 
     var boxCount = 1500;
     var container = document.getElementById('container');
     for (i = 0; i < boxCount; i++) {
         var boxDiv = document.createElement('div');
-        boxDiv.className = 'box';
+        boxDiv.className = 'box selection';
         container.appendChild(boxDiv);
     }
 
+    var app = new DragEnSelect();
+    app.attach();
+
 </script>
-<script type="text/javascript" src="drag-en-select.js"></script>
 
 </body>
 </html>

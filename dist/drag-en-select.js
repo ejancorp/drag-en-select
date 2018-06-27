@@ -15,24 +15,100 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
          * create DragEnSelect class
          * @param options
          */
-        function DragEnSelect() {
-            var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
-                onDragStart: function onDragStart() {},
-                onDragMove: function onDragMove() {},
-                onDragEnd: function onDragEnd() {},
-                onDragSelect: function onDragSelect() {}
-            };
-
+        function DragEnSelect(options) {
             _classCallCheck(this, DragEnSelect);
+
+            var defaults = {
+                selection: '.selection',
+                selected_class_name: 'selected',
+                select_box_class_name: 'select-box'
+            };
+            this.options = this.set_options(defaults, options);
+
+            this.is_dragging = [];
+            this.selected_items = [];
+            this.start_x = 0;
+            this.start_y = 0;
+
+            this.select_box = document.createElement('div');
         }
 
+        /**
+         * Extends defaults with new options
+         * @param defaults
+         * @param options
+         */
+
+
         _createClass(DragEnSelect, [{
+            key: 'set_options',
+            value: function set_options(defaults, options) {
+                var prop = void 0;
+                var extended = {};
+                for (prop in defaults) {
+                    if (Object.prototype.hasOwnProperty.call(defaults, prop)) {
+                        extended[prop] = defaults[prop];
+                    }
+                }
+                for (prop in options) {
+                    if (Object.prototype.hasOwnProperty.call(options, prop)) {
+                        extended[prop] = options[prop];
+                    }
+                }
+                return extended;
+            }
+
+            /**
+             * Enable to drag and select plugin
+             */
+
+        }, {
+            key: 'attach',
+            value: function attach() {
+
+                this.build_select_box();
+
+                this.hide_select_box();
+
+                this.bind_events();
+
+                document.getElementsByTagName('body')[0].appendChild(this.select_box);
+            }
+
+            /**
+             * Build select box style and class name
+             */
+
+        }, {
+            key: 'build_select_box',
+            value: function build_select_box() {
+                this.select_box.className = this.options.select_box_class_name;
+                this.select_box.style.position = 'absolute';
+                this.select_box.style.left = '0';
+                this.select_box.style.top = '0';
+                this.select_box.style.width = '0';
+                this.select_box.style.height = '0';
+            }
+        }, {
+            key: 'show_select_box',
+            value: function show_select_box() {
+                this.select_box.style.display = 'block';
+            }
+        }, {
+            key: 'hide_select_box',
+            value: function hide_select_box() {
+                this.select_box.style.display = 'none';
+            }
+
+            /**
+             * Bind events immediately
+             */
+
+        }, {
             key: 'bind_events',
             value: function bind_events() {
                 document.addEventListener('selectstart', this.on_select_start.bind(this));
-                document.addEventListener('mouseup', this.on_mouse_up.bind(this));
                 document.addEventListener('mousedown', this.on_mouse_down.bind(this));
-                document.addEventListener('mousemove', this.on_mouse_move.bind(this));
             }
 
             /**
@@ -47,6 +123,33 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
 
             /**
+             * Handle mousedown event
+             * @param event
+             */
+
+        }, {
+            key: 'on_mouse_down',
+            value: function on_mouse_down(event) {
+                var _this = this;
+
+                this.is_dragging = true;
+                this.start_x = event.pageX;
+                this.start_y = event.pageY;
+
+                this.selected_items = this.build_items(document.querySelectorAll(this.options.selection));
+
+                this.build_select_box();
+                this.show_select_box();
+
+                document.addEventListener('mouseup', this.on_mouse_up.bind(this));
+
+                setTimeout(function () {
+                    if (!_this.is_dragging) return false;
+                    document.addEventListener('mousemove', _this.on_mouse_move.bind(_this));
+                }, 100);
+            }
+
+            /**
              * Handle mouseup event
              * @param event
              */
@@ -54,18 +157,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: 'on_mouse_up',
             value: function on_mouse_up(event) {
-                document.removeEventListener('mousemove');
-                document.removeEventListener('mouseup');
+                this.is_dragging = false;
+                this.selected_items = [];
+
+                this.hide_select_box();
+
+                document.removeEventListener('mousemove', this.on_mouse_move.bind(this));
+                document.removeEventListener('mouseup', this.on_mouse_up.bind(this));
             }
-
-            /**
-             * Handle mousedown event
-             * @param event
-             */
-
-        }, {
-            key: 'on_mouse_down',
-            value: function on_mouse_down(event) {}
 
             /**
              * Handle mousemove event
@@ -74,133 +173,77 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         }, {
             key: 'on_mouse_move',
-            value: function on_mouse_move(event) {}
-        }, {
-            key: 'attach',
-            value: function attach() {
-                var dragbox = document.createElement('div');
-                var isDragCancelled = false;
-                var startX, startY;
-                var selectItems;
+            value: function on_mouse_move(event) {
+                var x = event.pageX;
+                var y = event.pageY;
+                var top = Math.min(this.start_y, y);
+                var left = Math.min(this.start_x, x);
+                var width = Math.abs(this.start_x - x);
+                var height = Math.abs(this.start_y - y);
 
-                document.body.appendChild(dragbox);
+                this.select_box.style.top = top + 'px';
+                this.select_box.style.left = left + 'px';
+                this.select_box.style.width = width + 'px';
+                this.select_box.style.height = height + 'px';
 
-                document.addEventListener('selectstart', function (e) {
-                    e.preventDefault();
-                });
-
-                document.addEventListener('mousedown', function (e) {
-                    isDragCancelled = false;
-                    startX = e.pageX;
-                    startY = e.pageY;
-
-                    selectItems = document.querySelectorAll('.selectable');
-
-                    selectItems = Array.prototype.map.call(selectItems, function (element) {
-                        return {
-                            element: element,
-                            isSelected: element.classList.contains('is-selected')
-                        };
-                    });
-
-                    document.addEventListener('mouseup', handleMouseUp);
-                    setTimeout(function () {
-                        if (isDragCancelled) {
-                            return;
-                        }
-
-                        document.addEventListener('mousemove', handleMouseMove);
-                    }, 100);
-                });
-
-                function handleMouseMove(e) {
-                    var x = e.pageX;
-                    var y = e.pageY;
-                    var top = Math.min(startY, y);
-                    var left = Math.min(startX, x);
-                    var width = Math.abs(startX - x);
-                    var height = Math.abs(startY - y);
-
-                    dragbox.setAttribute('style', 'position: absolute;' + 'border: 1px solid rgba(166, 193, 255, .8);' + 'background: rgba(166, 193, 255, .3);' + 'left:' + left + 'px;' + 'top:' + top + 'px;' + 'width:' + width + 'px;' + 'height:' + height + 'px;');
-
-                    selectItems.forEach(function (selectItem) {
-                        var el = selectItem.element;
-
-                        if (el.offsetLeft >= left && el.offsetTop >= top && el.offsetLeft + el.offsetWidth <= left + width && el.offsetTop + el.offsetHeight <= top + height) {
-                            selectItem.isSelected ? el.classList.remove('is-selected') : el.classList.add('is-selected');
-                        } else {
-                            selectItem.isSelected ? el.classList.add('is-selected') : el.classList.remove('is-selected');
-                        }
-                    });
-                }
-
-                function handleMouseUp() {
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                    isDragCancelled = true;
-                    dragbox.style.display = 'none';
-                    selectItems = [];
-                }
+                this.set_selected_items(top, left, width, height);
             }
+
+            /**
+             * Set class name of selected items
+             * @param top
+             * @param left
+             * @param width
+             * @param height
+             */
+
         }, {
-            key: 'test',
-            value: function test() {
+            key: 'set_selected_items',
+            value: function set_selected_items(top, left, width, height) {
+                var _this2 = this;
 
-                var con = document.getElementById('element-container');
-                var box = document.getElementById('el-box');
-
-                var mouse = {
-                    x: 0,
-                    y: 0,
-                    startX: 0,
-                    startY: 0
-                };
-
-                function setMousePosition(e) {
-                    var ev = e || window.event; //Moz || IE
-                    if (ev.pageX) {
-                        //Moz
-                        mouse.x = ev.pageX + window.pageXOffset;
-                        mouse.y = ev.pageY + window.pageYOffset;
-                    } else if (ev.clientX) {
-                        //IE
-                        mouse.x = ev.clientX + document.body.scrollLeft;
-                        mouse.y = ev.clientY + document.body.scrollTop;
+                this.selected_items.forEach(function (selected_item) {
+                    if (_this2.is_element_selected(selected_item.element, top, left, width, height)) {
+                        selected_item.is_selected ? selected_item.element.classList.remove(_this2.options.selected_class_name) : selected_item.element.classList.add(_this2.options.selected_class_name);
+                    } else {
+                        selected_item.is_selected ? selected_item.element.classList.add(_this2.options.selected_class_name) : selected_item.element.classList.remove(_this2.options.selected_class_name);
                     }
-                };
+                });
+            }
 
-                var x, y;
-                con.addEventListener('mousemove', function (e) {
-                    x = e.clientX;
-                    y = e.clientY;
-                    box.style.position = 'absolute';
-                    if (typeof x !== 'undefined') {
-                        box.style.left = x - 10 + "px";
-                        box.style.top = y - 10 + "px";
-                    }
-                }, false);
+            /**
+             * Check if element is under the selection
+             * @param element
+             * @param top
+             * @param left
+             * @param width
+             * @param height
+             * @return {boolean}
+             */
 
-                box.addEventListener('dragstart', function (e) {
-                    mouse.startX = mouse.x;
-                    mouse.startY = mouse.y;
-                }, false);
+        }, {
+            key: 'is_element_selected',
+            value: function is_element_selected(element, top, left, width, height) {
+                return element.offsetLeft >= left && element.offsetTop >= top && element.offsetLeft + element.offsetWidth <= left + width && element.offsetTop + element.offsetHeight <= top + height;
+            }
 
-                box.addEventListener('dragend', function (e) {
-                    box.style.width = '10px';
-                    box.style.height = '10px';
-                    x = e.clientX;
-                    y = e.clientY;
-                }, false);
+            /**
+             * Build selected an non selected items
+             * @param items
+             * @return {any[]}
+             */
 
-                box.addEventListener('drag', function (e) {
+        }, {
+            key: 'build_items',
+            value: function build_items(items) {
+                var _this3 = this;
 
-                    setMousePosition(e);
-
-                    box.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
-                    box.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
-                    box.style.left = mouse.x - mouse.startX < 0 ? mouse.x + 'px' : mouse.startX + 'px';
-                    box.style.top = mouse.y - mouse.startY < 0 ? mouse.y + 'px' : mouse.startY + 'px';
-                }, false);
+                return Array.prototype.map.call(items, function (element) {
+                    return {
+                        element: element,
+                        is_selected: element.classList.contains(_this3.options.selected_class_name)
+                    };
+                });
             }
         }]);
 
@@ -210,83 +253,4 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     window || (window = {});
     window.DragEnSelect || (window.DragEnSelect = {});
     window.DragEnSelect = DragEnSelect;
-
-    var app = new DragEnSelect();
-    app.attach();
-
-    //
-    // const container = document.getElementById('element-container');
-    //
-    // const pointerEventToXY = function (e) {
-    //     const out = {x: 0, y: 0};
-    //     if (e.type === 'touchstart' || e.type === 'touchmove' || e.type === 'touchend' || e.type === 'touchcancel') {
-    //         const touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
-    //         out.x = touch.pageX;
-    //         out.y = touch.pageY;
-    //     } else if (e.type === 'mousedown' || e.type === 'mouseup' || e.type === 'mousemove' || e.type === 'mouseover' || e.type === 'mouseout' || e.type === 'mouseenter' || e.type === 'mouseleave') {
-    //         out.x = e.pageX;
-    //         out.y = e.pageY;
-    //     }
-    //     return out;
-    // };
-    //
-    // container.addEventListener("touchstart", (e) => {
-    //
-    //     const pos = pointerEventToXY(e);
-    //
-    // }, false);
-    //
-    // container.addEventListener("touchmove", (event) => {
-    //     console.log(event);
-    // }, false);
-    //
-    //
-    // function initDraw(canvas) {
-    //     function setMousePosition(e) {
-    //         var ev = e || window.event; //Moz || IE
-    //         if (ev.pageX) { //Moz
-    //             mouse.x = ev.pageX + window.pageXOffset;
-    //             mouse.y = ev.pageY + window.pageYOffset;
-    //         } else if (ev.clientX) { //IE
-    //             mouse.x = ev.clientX + document.body.scrollLeft;
-    //             mouse.y = ev.clientY + document.body.scrollTop;
-    //         }
-    //     };
-    //
-    //     var mouse = {
-    //         x: 0,
-    //         y: 0,
-    //         startX: 0,
-    //         startY: 0
-    //     };
-    //     var element = null;
-    //
-    //     canvas.onmousemove = function (e) {
-    //         setMousePosition(e);
-    //         if (element !== null) {
-    //             element.style.width = Math.abs(mouse.x - mouse.startX) + 'px';
-    //             element.style.height = Math.abs(mouse.y - mouse.startY) + 'px';
-    //             element.style.left = (mouse.x - mouse.startX < 0) ? mouse.x + 'px' : mouse.startX + 'px';
-    //             element.style.top = (mouse.y - mouse.startY < 0) ? mouse.y + 'px' : mouse.startY + 'px';
-    //         }
-    //     }
-    //
-    //     canvas.onclick = function (e) {
-    //         if (element !== null) {
-    //             element = null;
-    //             canvas.style.cursor = "default";
-    //             console.log("finsihed.");
-    //         } else {
-    //             console.log("begun.");
-    //             mouse.startX = mouse.x;
-    //             mouse.startY = mouse.y;
-    //             element = document.createElement('div');
-    //             element.className = 'rectangle'
-    //             element.style.left = mouse.x + 'px';
-    //             element.style.top = mouse.y + 'px';
-    //             canvas.appendChild(element)
-    //             canvas.style.cursor = "crosshair";
-    //         }
-    //     }
-    // }
 })();
