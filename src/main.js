@@ -18,7 +18,7 @@
                 update_selection: false,
                 on_select_start: () => {
                 },
-                on_select_progress: () => {
+                on_select_change: () => {
                 },
                 on_select_end: () => {
                 },
@@ -118,7 +118,7 @@
             this.build_select_box();
             this.show_select_box();
 
-            this.options.on_select_start.call(null, this.selection_items);
+            this.options.on_select_start.call(null, this.get_selected_items());
 
             document.addEventListener('mouseup', this.on_mouse_up.bind(this));
 
@@ -134,7 +134,7 @@
          */
         on_mouse_up(event) {
 
-            this.options.on_select_progress.call(null, this.selection_items);
+            this.options.on_select_end.call(null, this.selection_items);
 
             this.is_dragging = false;
             this.selection_items = [];
@@ -164,7 +164,7 @@
 
             this.set_selected_items(top, left, width, height);
 
-            this.options.on_select_progress.call(null, this.selection_items);
+            this.options.on_select_change.call(null, this.get_selected_items());
         }
 
         /**
@@ -175,15 +175,19 @@
          * @param height
          */
         set_selected_items(top, left, width, height) {
-            this.selection_items.forEach((selected_item) => {
+            this.selection_items.forEach((selected_item, item_index) => {
                 if (this.is_element_selected(selected_item.element, top, left, width, height)) {
+
                     selected_item.is_selected
                         ? selected_item.element.classList.remove(this.options.selected_class_name)
                         : selected_item.element.classList.add(this.options.selected_class_name)
+
                 } else {
+
                     selected_item.is_selected
                         ? selected_item.element.classList.add(this.options.selected_class_name)
                         : selected_item.element.classList.remove(this.options.selected_class_name)
+
                 }
             });
         }
@@ -202,6 +206,20 @@
                 && element.offsetTop >= top
                 && element.offsetLeft + element.offsetWidth <= left + width
                 && element.offsetTop + element.offsetHeight <= top + height;
+        }
+
+        /**
+         * get selected items
+         * @return {any[]}
+         */
+        get_selected_items() {
+            return Array.prototype.map.call(this.selection_items, (item) => {
+                if (!item.is_selected) return false;
+
+                return item.element;
+            }).filter((value) => {
+                return value;
+            });
         }
 
         /**

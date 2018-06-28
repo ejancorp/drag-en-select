@@ -24,7 +24,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 select_box_class_name: 'select-box',
                 update_selection: false,
                 on_select_start: function on_select_start() {},
-                on_select_progress: function on_select_progress() {},
+                on_select_change: function on_select_change() {},
                 on_select_end: function on_select_end() {}
             };
             this.options = this.set_options(defaults, options);
@@ -145,7 +145,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 this.build_select_box();
                 this.show_select_box();
 
-                this.options.on_select_start.call(null, this.selection_items);
+                this.options.on_select_start.call(null, this.get_selected_items());
 
                 document.addEventListener('mouseup', this.on_mouse_up.bind(this));
 
@@ -164,7 +164,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             key: 'on_mouse_up',
             value: function on_mouse_up(event) {
 
-                this.options.on_select_progress.call(null, this.selection_items);
+                this.options.on_select_end.call(null, this.selection_items);
 
                 this.is_dragging = false;
                 this.selection_items = [];
@@ -197,7 +197,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 this.set_selected_items(top, left, width, height);
 
-                this.options.on_select_progress.call(null, this.selection_items);
+                this.options.on_select_change.call(null, this.get_selected_items());
             }
 
             /**
@@ -213,10 +213,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             value: function set_selected_items(top, left, width, height) {
                 var _this2 = this;
 
-                this.selection_items.forEach(function (selected_item) {
+                this.selection_items.forEach(function (selected_item, item_index) {
                     if (_this2.is_element_selected(selected_item.element, top, left, width, height)) {
+
                         selected_item.is_selected ? selected_item.element.classList.remove(_this2.options.selected_class_name) : selected_item.element.classList.add(_this2.options.selected_class_name);
                     } else {
+
                         selected_item.is_selected ? selected_item.element.classList.add(_this2.options.selected_class_name) : selected_item.element.classList.remove(_this2.options.selected_class_name);
                     }
                 });
@@ -236,6 +238,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             key: 'is_element_selected',
             value: function is_element_selected(element, top, left, width, height) {
                 return element.offsetLeft >= left && element.offsetTop >= top && element.offsetLeft + element.offsetWidth <= left + width && element.offsetTop + element.offsetHeight <= top + height;
+            }
+
+            /**
+             * get selected items
+             * @return {any[]}
+             */
+
+        }, {
+            key: 'get_selected_items',
+            value: function get_selected_items() {
+                return Array.prototype.map.call(this.selection_items, function (item) {
+                    if (!item.is_selected) return false;
+
+                    return item.element;
+                }).filter(function (value) {
+                    return value;
+                });
             }
 
             /**
