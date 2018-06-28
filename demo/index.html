@@ -49,7 +49,13 @@
         container.appendChild(boxDiv);
     }
 
-    var app = new DragEnSelect();
+    var app = new DragEnSelect({
+
+        on_select_start: function (data) {
+            console.log(data);
+
+        }
+    });
     app.attach();
 
 </script>

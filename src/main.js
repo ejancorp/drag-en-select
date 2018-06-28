@@ -14,12 +14,19 @@
             const defaults = {
                 selection: '.selection',
                 selected_class_name: 'selected',
-                select_box_class_name: 'select-box'
+                select_box_class_name: 'select-box',
+                update_selection: false,
+                on_select_start: () => {
+                },
+                on_select_progress: () => {
+                },
+                on_select_end: () => {
+                },
             };
             this.options = this.set_options(defaults, options);
 
             this.is_dragging = [];
-            this.selected_items = [];
+            this.selection_items = [];
             this.start_x = 0;
             this.start_y = 0;
 
@@ -106,10 +113,12 @@
             this.start_x = event.pageX;
             this.start_y = event.pageY;
 
-            this.selected_items = this.build_items(document.querySelectorAll(this.options.selection));
+            this.selection_items = this.build_items(document.querySelectorAll(this.options.selection));
 
             this.build_select_box();
             this.show_select_box();
+
+            this.options.on_select_start.call(null, this.selection_items);
 
             document.addEventListener('mouseup', this.on_mouse_up.bind(this));
 
@@ -124,8 +133,11 @@
          * @param event
          */
         on_mouse_up(event) {
+
+            this.options.on_select_progress.call(null, this.selection_items);
+
             this.is_dragging = false;
-            this.selected_items = [];
+            this.selection_items = [];
 
             this.hide_select_box();
 
@@ -151,6 +163,8 @@
             this.select_box.style.height = `${height}px`;
 
             this.set_selected_items(top, left, width, height);
+
+            this.options.on_select_progress.call(null, this.selection_items);
         }
 
         /**
@@ -161,7 +175,7 @@
          * @param height
          */
         set_selected_items(top, left, width, height) {
-            this.selected_items.forEach((selected_item) => {
+            this.selection_items.forEach((selected_item) => {
                 if (this.is_element_selected(selected_item.element, top, left, width, height)) {
                     selected_item.is_selected
                         ? selected_item.element.classList.remove(this.options.selected_class_name)
@@ -197,6 +211,11 @@
          */
         build_items(items) {
             return Array.prototype.map.call(items, (element) => {
+
+                if (!this.options.update_selection) {
+                    element.classList.remove(this.options.selected_class_name)
+                }
+
                 return {
                     element: element,
                     is_selected: element.classList.contains(this.options.selected_class_name)
