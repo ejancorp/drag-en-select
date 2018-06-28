@@ -35,6 +35,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             this.start_y = 0;
 
             this.select_box = document.createElement('div');
+            this.set_mouse_move = null;
         }
 
         /**
@@ -69,11 +70,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: 'attach',
             value: function attach() {
-
                 this.build_select_box();
-
                 this.hide_select_box();
-
                 this.bind_events();
 
                 document.getElementsByTagName('body')[0].appendChild(this.select_box);
@@ -111,8 +109,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: 'bind_events',
             value: function bind_events() {
-                document.addEventListener('selectstart', this.on_select_start.bind(this));
-                document.addEventListener('mousedown', this.on_mouse_down.bind(this));
+                document.addEventListener('selectstart', this.on_select_start.bind(this), false);
+                document.addEventListener('mousedown', this.on_mouse_down.bind(this), false);
             }
 
             /**
@@ -147,11 +145,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 this.options.on_select_start.call(null, this.get_selected_items());
 
-                document.addEventListener('mouseup', this.on_mouse_up.bind(this));
+                document.addEventListener('mouseup', this.on_mouse_up.bind(this), false);
 
-                setTimeout(function () {
+                this.set_mouse_move = setTimeout(function () {
                     if (!_this.is_dragging) return false;
-                    document.addEventListener('mousemove', _this.on_mouse_move.bind(_this));
+                    document.addEventListener('mousemove', _this.on_mouse_move.bind(_this), false);
                 }, 100);
             }
 
@@ -163,16 +161,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: 'on_mouse_up',
             value: function on_mouse_up(event) {
+                document.removeEventListener('mousemove', this.on_mouse_move.bind(this), false);
+                document.removeEventListener('mouseup', this.on_mouse_up.bind(this), false);
 
-                this.options.on_select_end.call(null, this.selection_items);
+                this.options.on_select_end.call(null, this.get_selected_items());
 
                 this.is_dragging = false;
                 this.selection_items = [];
 
                 this.hide_select_box();
-
-                document.removeEventListener('mousemove', this.on_mouse_move.bind(this));
-                document.removeEventListener('mouseup', this.on_mouse_up.bind(this));
             }
 
             /**
@@ -183,6 +180,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: 'on_mouse_move',
             value: function on_mouse_move(event) {
+                if (!this.is_dragging) {
+                    return;
+                }
+
                 var x = event.pageX;
                 var y = event.pageY;
                 var top = Math.min(this.start_y, y);
@@ -215,11 +216,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 this.selection_items.forEach(function (selected_item, item_index) {
                     if (_this2.is_element_selected(selected_item.element, top, left, width, height)) {
-
-                        selected_item.is_selected ? selected_item.element.classList.remove(_this2.options.selected_class_name) : selected_item.element.classList.add(_this2.options.selected_class_name);
+                        selected_item.element.classList.add(_this2.options.selected_class_name);
+                        _this2.selection_items[item_index].is_selected = true;
                     } else {
-
-                        selected_item.is_selected ? selected_item.element.classList.add(_this2.options.selected_class_name) : selected_item.element.classList.remove(_this2.options.selected_class_name);
+                        if (selected_item.is_selected) {
+                            selected_item.element.classList.add(_this2.options.selected_class_name);
+                            _this2.selection_items[item_index].is_selected = true;
+                            return;
+                        }
                     }
                 });
             }
@@ -269,7 +273,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var _this3 = this;
 
                 return Array.prototype.map.call(items, function (element) {
-
                     if (!_this3.options.update_selection) {
                         element.classList.remove(_this3.options.selected_class_name);
                     }

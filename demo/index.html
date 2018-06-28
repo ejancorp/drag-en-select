@@ -50,12 +50,14 @@
     }
 
     var app = new DragEnSelect({
-
         on_select_start: function (data) {
-            console.log(data);
+            console.log(data.length, 'start');
         },
         on_select_change: function (data) {
-            console.log(data);
+            console.log(data.length, 'changing');
+        },
+        on_select_end: function (data) {
+            console.log(data.length, 'end');
         }
     });
     app.attach();

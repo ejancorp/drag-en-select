@@ -10,7 +10,6 @@
          * @param options
          */
         constructor(options) {
-
             const defaults = {
                 selection: '.selection',
                 selected_class_name: 'selected',
@@ -31,6 +30,7 @@
             this.start_y = 0;
 
             this.select_box = document.createElement('div');
+            this.set_mouse_move = null;
         }
 
         /**
@@ -58,11 +58,8 @@
          * Enable to drag and select plugin
          */
         attach() {
-
             this.build_select_box();
-
             this.hide_select_box();
-
             this.bind_events();
 
             document.getElementsByTagName('body')[0].appendChild(this.select_box);
@@ -92,8 +89,8 @@
          * Bind events immediately
          */
         bind_events() {
-            document.addEventListener('selectstart', this.on_select_start.bind(this));
-            document.addEventListener('mousedown', this.on_mouse_down.bind(this));
+            document.addEventListener('selectstart', this.on_select_start.bind(this), false);
+            document.addEventListener('mousedown', this.on_mouse_down.bind(this), false);
         }
 
         /**
@@ -120,11 +117,11 @@
 
             this.options.on_select_start.call(null, this.get_selected_items());
 
-            document.addEventListener('mouseup', this.on_mouse_up.bind(this));
+            document.addEventListener('mouseup', this.on_mouse_up.bind(this), false);
 
-            setTimeout(() => {
+            this.set_mouse_move = setTimeout(() => {
                 if (!this.is_dragging) return false;
-                document.addEventListener('mousemove', this.on_mouse_move.bind(this));
+                document.addEventListener('mousemove', this.on_mouse_move.bind(this), false);
             }, 100);
         }
 
@@ -133,16 +130,15 @@
          * @param event
          */
         on_mouse_up(event) {
+            document.removeEventListener('mousemove', this.on_mouse_move.bind(this), false);
+            document.removeEventListener('mouseup', this.on_mouse_up.bind(this), false);
 
-            this.options.on_select_end.call(null, this.selection_items);
+            this.options.on_select_end.call(null, this.get_selected_items());
 
             this.is_dragging = false;
             this.selection_items = [];
 
             this.hide_select_box();
-
-            document.removeEventListener('mousemove', this.on_mouse_move.bind(this));
-            document.removeEventListener('mouseup', this.on_mouse_up.bind(this));
         }
 
         /**
@@ -150,6 +146,10 @@
          * @param event
          */
         on_mouse_move(event) {
+            if (!this.is_dragging) {
+                return;
+            }
+
             const x = event.pageX;
             const y = event.pageY;
             const top = Math.min(this.start_y, y);
@@ -177,17 +177,14 @@
         set_selected_items(top, left, width, height) {
             this.selection_items.forEach((selected_item, item_index) => {
                 if (this.is_element_selected(selected_item.element, top, left, width, height)) {
-
-                    selected_item.is_selected
-                        ? selected_item.element.classList.remove(this.options.selected_class_name)
-                        : selected_item.element.classList.add(this.options.selected_class_name)
-
+                    selected_item.element.classList.add(this.options.selected_class_name);
+                    this.selection_items[item_index].is_selected = true;
                 } else {
-
-                    selected_item.is_selected
-                        ? selected_item.element.classList.add(this.options.selected_class_name)
-                        : selected_item.element.classList.remove(this.options.selected_class_name)
-
+                    if (selected_item.is_selected) {
+                        selected_item.element.classList.add(this.options.selected_class_name);
+                        this.selection_items[item_index].is_selected = true;
+                        return;
+                    }
                 }
             });
         }
@@ -215,7 +212,7 @@
         get_selected_items() {
             return Array.prototype.map.call(this.selection_items, (item) => {
                 if (!item.is_selected) return false;
-
+                
                 return item.element;
             }).filter((value) => {
                 return value;
@@ -229,7 +226,6 @@
          */
         build_items(items) {
             return Array.prototype.map.call(items, (element) => {
-
                 if (!this.options.update_selection) {
                     element.classList.remove(this.options.selected_class_name)
                 }
